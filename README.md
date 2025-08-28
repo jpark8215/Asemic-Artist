@@ -1,6 +1,3 @@
-# AsemicArtist
-OpenAI Hackathon
-
 # Asemic Architect Installation Instructions
 
 ## 1. Install Ollama
