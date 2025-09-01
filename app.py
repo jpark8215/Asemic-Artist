@@ -75,7 +75,7 @@ def query_model(model, system_prompt, user_prompt):
     )
     return response.choices[0].message["content"]
 
-def generate_asemic_svg(prompt: str, model: str, chosen_colors: list, stroke_width: float, complexity: str):
+def generate_asemic_svg(prompt: str, model: str, chosen_colors: list, stroke_width: float, complexity: str, max_retries=5):
     color_map = {
         "Black": "#000000", "Crimson Red": "#DC143C", "Forest Green": "#228B22",
         "Royal Blue": "#4169E1", "Gold": "#FFD700", "Deep Purple": "#4B0082",
@@ -104,15 +104,13 @@ def generate_asemic_svg(prompt: str, model: str, chosen_colors: list, stroke_wid
     settings = complexity_settings.get(complexity, complexity_settings["Moderate"])
 
     enhanced_prompt = f"""
-Create a visually stunning asemic art SVG based on: "{prompt}"
-
+Create a visually stunning asemic art in SVG code ONLY based on: "{prompt}"
 SPECIFICATIONS:
 - Colors: {color_info}
 - Base stroke width: {stroke_width}
 - Complexity: {settings['elements']}, {settings['animations']}, {settings['detail']}
 - Canvas: 600x600 viewBox
 - Style: Flowing, organic, otherworldly, sophisticated
-
 MANDATORY ELEMENTS:
 1. Use <defs> with gradients
 2. Create {settings['elements']} with varied stroke-width from {stroke_width*0.5} to {stroke_width*3}
@@ -120,43 +118,54 @@ MANDATORY ELEMENTS:
 4. Layer elements with <g> groups and varying opacity (0.3-1.0)
 5. Include flowing paths, organic shapes, and geometric accents
 6. Create visual depth through layering and scale variation
-
 Output ONLY the complete SVG code.
 """
 
-    try:
-        start_time = time.time()
-        raw_output = query_model(model, SYSTEM_PROMPT, enhanced_prompt)
-        generation_time = time.time() - start_time
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            start_time = time.time()
+            raw_output = query_model(model, SYSTEM_PROMPT, enhanced_prompt)
+            generation_time = time.time() - start_time
 
-        # Try extracting a valid <svg>...</svg>
-        svg_match = re.search(r'<svg[^>]*>[\s\S]*?</svg>', raw_output, re.IGNORECASE)
-        if svg_match:
-            svg_content = svg_match.group(0)
-        else:
-            # Fallback: guarantee valid SVG so UI never fails
-            svg_content = """
-            <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
-                <rect width="600" height="600" fill="white"/>
-                <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-                      font-size="24" fill="red">[No valid SVG found]</text>
-            </svg>
-            """
+            svg_match = re.search(r'<svg[^>]*>[\s\S]*?</svg>', raw_output, re.IGNORECASE)
+            if svg_match:
+                svg_content = svg_match.group(0)
+                # Ensure viewport and size
+                if 'viewBox' not in svg_content:
+                    svg_content = svg_content.replace('<svg', '<svg viewBox="0 0 600 600"', 1)
+                if 'width' not in svg_content and 'height' not in svg_content:
+                    svg_content = svg_content.replace('<svg', '<svg width="600" height="600"', 1)
 
-        # Ensure viewport and size
-        if 'viewBox' not in svg_content:
-            svg_content = svg_content.replace('<svg', '<svg viewBox="0 0 600 600"', 1)
-        if 'width' not in svg_content and 'height' not in svg_content:
-            svg_content = svg_content.replace('<svg', '<svg width="600" height="600"', 1)
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".svg", mode="w", encoding="utf-8") as tmp:
+                    tmp.write(svg_content)
+                    file_path = tmp.name
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".svg", mode="w", encoding="utf-8") as tmp:
-            tmp.write(svg_content)
-            file_path = tmp.name
+                return svg_content, file_path, f"Generated in {generation_time:.1f} seconds using {model} (attempt {attempt+1})"
 
-        return svg_content, file_path, f"Generated in {generation_time:.1f} seconds using {model}"
+            else:
+                attempt += 1  # Retry if no SVG
+        except Exception as e:
+            attempt += 1
+            if attempt >= max_retries:
+                fallback_svg = """
+                <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+                    <rect width="600" height="600" fill="white"/>
+                    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+                          font-size="24" fill="red">[Error: {}</text>
+                </svg>
+                """.format(str(e))
+                return fallback_svg, None, f"Error after {attempt} attempts: {str(e)}"
 
-    except Exception as e:
-        return f"<p style='color:red;'>Error: {str(e)}</p>", None, f"Error during generation: {str(e)}"
+    # If all retries fail
+    fallback_svg = """
+    <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+        <rect width="600" height="600" fill="white"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+              font-size="24" fill="red">[No valid SVG found]</text>
+    </svg>
+    """
+    return fallback_svg, None, f"No valid SVG after {max_retries} attempts"
 
 
 def surprise_prompt():
@@ -208,14 +217,14 @@ with gr.Blocks(
                         "Deep Purple", "Indigo", "Lavender", "Magenta", "Fuchsia",
                         "Orange", "Amber", "Copper", "Rose Gold", "Maroon", "Onyx", "Teal"
                     ],
-                    value=["Black", "Gold", "Deep Purple"]
+                    value=["Black", "Gold"]
                 )
                 
                 stroke_slider = gr.Slider(label="Base Stroke Width", minimum=0.5, maximum=5.0, step=0.1, value=2.0)
             
             generate_button = gr.Button("Generate Asemic Entity", variant="primary")
 
-        with gr.Column(scale=2):
+        with gr.Column(scale=3):
             with gr.Group():
                 output_display = gr.HTML(label="Generated Entity")
                 output_file = gr.File(label="Download SVG")
