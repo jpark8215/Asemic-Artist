@@ -188,7 +188,7 @@ with gr.Blocks(
                 
                 model_selector = gr.Dropdown(
                     label="AI Model",
-                    choices=["openai/gpt-oss-20b", "openai/gpt-oss-120b"], 
+                    choices=["openai/gpt-oss-20b", "openai/gpt-oss-120b", "mistralai/Mixtral-8x7B-Instruct-v0.1"], 
                     value="openai/gpt-oss-20b"
                 )
                 
@@ -215,7 +215,7 @@ with gr.Blocks(
             
             generate_button = gr.Button("Generate Asemic Entity", variant="primary")
 
-        with gr.Column(scale=3):
+        with gr.Column(scale=2):
             with gr.Group():
                 output_display = gr.HTML(label="Generated Entity")
                 output_file = gr.File(label="Download SVG")
