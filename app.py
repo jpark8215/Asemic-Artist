@@ -1,4 +1,3 @@
-
 import gradio as gr
 import tempfile
 import re
@@ -15,7 +14,6 @@ client = InferenceClient(token=HF_TOKEN)
 # --- System Prompt ---
 SYSTEM_PROMPT = """
 You are an Asemic Master Artist AI specializing in creating breathtaking, otherworldly SVG entities.
-
 CRITICAL RULES:
 - Output ONLY valid <svg>...</svg> markup, nothing else
 - Create complex, layered compositions with multiple <g> groups
@@ -24,7 +22,6 @@ CRITICAL RULES:
 - Employ gradients, patterns, and sophisticated color relationships
 - Create depth through layering, opacity, and stroke variations
 - Make it visually stunning - something that would stop viewers in their tracks
-
 TECHNICAL REQUIREMENTS:
 - Viewport: 600x600 minimum
 - Use provided colors only
@@ -171,10 +168,16 @@ Output ONLY the complete SVG code.
 def surprise_prompt():
     return random.choice(SURPRISE_PROMPTS)
 
+
+
 # --- Gradio UI ---
 with gr.Blocks(
     theme=gr.themes.Soft(primary_hue="purple", secondary_hue="blue", neutral_hue="slate"), 
     title="Asemic Artist",
+    css="""
+    /* Add a subtle transition for the accordion */
+    .gradio-accordion { transition: all 0.2s ease-in-out; }
+    """
 ) as app:
     
     gr.Markdown(
@@ -182,55 +185,63 @@ with gr.Blocks(
         # Asemic Artist
         ### Create abstract visual entities powered by AI
         *Enter a concept or hit **Surprise Me** for otherworldly asemic art*
-        """,
-        elem_classes=["prose"]
+        """
     )
 
     with gr.Row():
         with gr.Column(scale=2):
-            with gr.Group():
-                prompt_input = gr.Textbox(label="Creative Vision", placeholder="Describe your ethereal concept...", lines=3)
+            with gr.Tabs():
+                # --- Tab 1: The core creative input ---
+                with gr.TabItem("Vision", id=0):
+                    with gr.Group():
+                        prompt_input = gr.Textbox(label="Creative Vision", placeholder="Describe your ethereal concept...", lines=5)
+                        with gr.Row():
+                            surprise_button = gr.Button("Surprise Me", variant="secondary")
+                            clear_button = gr.Button("Clear", variant="secondary")
                 
-                with gr.Row():
-                    surprise_button = gr.Button("Surprise Me", variant="secondary")
-                    clear_button = gr.Button("Clear", variant="secondary")
-                
-                model_selector = gr.Dropdown(
-                    label="AI Model",
-                    choices=["openai/gpt-oss-20b", "openai/gpt-oss-120b", "mistralai/Mixtral-8x7B-Instruct-v0.1"], 
-                    value="openai/gpt-oss-20b"
-                )
-                
-                complexity_slider = gr.Radio(
-                    label="Complexity Level",
-                    choices=["Simple", "Moderate", "Complex"],
-                    value="Moderate"
-                )
+                # --- Tab 2: All the fine-tuning controls ---
+                with gr.TabItem("Style & Details", id=1):
+                    with gr.Group():
+                        model_selector = gr.Dropdown(
+                            label="AI Model",
+                            choices=["openai/gpt-oss-20b", "openai/gpt-oss-120b", "mistralai/Mixtral-8x7B-Instruct-v0.1"], 
+                            value="openai/gpt-oss-20b"
+                        )
+                        complexity_slider = gr.Radio(
+                            label="Complexity Level",
+                            choices=["Simple", "Moderate", "Complex"],
+                            value="Moderate"
+                        )
+                        stroke_slider = gr.Slider(label="Base Stroke Width", minimum=0.5, maximum=5.0, step=0.1, value=1.5)
+
+                    with gr.Accordion("Color Palette (Select 2-5)", open=False):
+                        color_selector = gr.CheckboxGroup(
+                            label="Color Palette",
+                            choices=[
+                                # Neutrals
+                                "Black", "Onyx", "Silver", "Pearl",
+                                # Reds & Pinks
+                                "Crimson Red", "Burgundy", "Maroon", "Coral", "Salmon", "Rose Gold",
+                                # Blues
+                                "Royal Blue", "Midnight Blue", "Navy", "Sky Blue", "Turquoise", "Aqua", "Teal",
+                                # Greens
+                                "Forest Green", "Sage Green", "Emerald", "Lime", "Chartreuse", "Olive",
+                                # Purples & Pinks
+                                "Deep Purple", "Indigo", "Lavender", "Magenta", "Fuchsia",
+                                # Oranges & Yellows
+                                "Orange", "Amber", "Gold", "Copper"
+                            ],
+                            value=["Black", "Gold", "Deep Purple"]
+                        )
             
-            with gr.Group():
-                color_selector = gr.CheckboxGroup(
-                    label="Color Palette",
-                    choices=[
-                        "Black", "Gold", "Silver", "Pearl", "Crimson Red", "Burgundy", "Coral", "Salmon",
-                        "Royal Blue", "Midnight Blue", "Navy", "Sky Blue", "Turquoise", "Aqua",
-                        "Forest Green", "Sage Green", "Emerald", "Lime", "Chartreuse", "Olive",
-                        "Deep Purple", "Indigo", "Lavender", "Magenta", "Fuchsia",
-                        "Orange", "Amber", "Copper", "Rose Gold", "Maroon", "Onyx", "Teal"
-                    ],
-                    value=["Black", "Gold"]
-                )
-                
-                stroke_slider = gr.Slider(label="Base Stroke Width", minimum=0.5, maximum=5.0, step=0.1, value=2.0)
-            
-            generate_button = gr.Button("Generate Asemic Entity", variant="primary")
+            generate_button = gr.Button("Generate Asemic Entity", variant="primary", size="lg")
 
         with gr.Column(scale=3):
             with gr.Group():
-                output_display = gr.HTML(label="Generated Entity")
+                output_display = gr.HTML(label="Generated Entity", show_label=False)
                 output_file = gr.File(label="Download SVG")
                 generation_info = gr.Textbox(label="Generation Info", interactive=False)
 
-    # --- Event bindings ---
     generate_button.click(
         fn=generate_asemic_svg,
         inputs=[prompt_input, model_selector, color_selector, stroke_slider, complexity_slider],
@@ -245,7 +256,7 @@ with gr.Blocks(
         gr.Markdown(
             """
             ---
-            **Asemic Art** *Writing without words, meaning through pure visual form. Powered by language models and creative algorithms*
+            **Asemic Art** *Writing without words, through pure visual form. Powered by language models and creative algorithms*
             """,
             elem_classes=["prose"]
     )
