@@ -33,8 +33,7 @@ def query_model(model, system_prompt, user_prompt):
         temperature=0.8,
     )
     return response.choices[0].message["content"]
-```yaml
-
+...
 
  4. **SVG Generation**: The gpt-oss model processes the complex prompt and generates a response that is pure SVG code.
 
