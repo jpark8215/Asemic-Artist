@@ -19,7 +19,7 @@ The process is as follows:
 
 3. **API Call**: The huggingface_hub.InferenceClient is used to send this prompt to the specified gpt-oss model (e.g., openai/gpt-oss-120b). The core of this interaction is the query_model function in app.py:
 
-Python
+
 ```yaml
 def query_model(model, system_prompt, user_prompt):
     """Call Hugging Face Inference API chat completion"""
@@ -33,7 +33,9 @@ def query_model(model, system_prompt, user_prompt):
         temperature=0.8,
     )
     return response.choices[0].message["content"]
- '''
+```yaml
+
+
  4. **SVG Generation**: The gpt-oss model processes the complex prompt and generates a response that is pure SVG code.
 
 5. **Output**: The application extracts the SVG from the model's response and displays it in the Gradio interface, making it available for download. A retry-loop is built-in to ensure robustness against API errors or malformed outputs.
