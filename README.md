@@ -20,7 +20,7 @@ The process is as follows:
 3. **API Call**: The huggingface_hub.InferenceClient is used to send this prompt to the specified gpt-oss model (e.g., openai/gpt-oss-120b). The core of this interaction is the query_model function in app.py:
 
 Python
-'''
+```yaml
 def query_model(model, system_prompt, user_prompt):
     """Call Hugging Face Inference API chat completion"""
     response = client.chat_completion(
