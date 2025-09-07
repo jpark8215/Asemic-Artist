@@ -67,7 +67,7 @@ Platform: Hugging Face Spaces
 
 API: Hugging Face Inference API (huggingface_hub)
 
-Core AI Models: openai/gpt-oss-120b, openai/gpt-oss-20b, mistralai/Mixtral-8x7B-Instruct-v0.1
+Core AI Models: openai/gpt-oss-20b, openai/gpt-oss-120b, mistralai/Mixtral-8x7B-Instruct-v0.1
 
 
 ## Hugging Face Configuration
