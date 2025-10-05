@@ -1,7 +1,6 @@
 # Asemic Artist
 
 Create abstract, asemic visual entities powered by GPT-OSS.  
-Live demo: [Asemic Artist on Hugging Face Spaces](https://huggingface.co/spaces/jpark8215/AsemicArtist)
 
 
 ## What is Asemic Artist?
